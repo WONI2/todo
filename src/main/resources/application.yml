@@ -27,5 +27,7 @@ logging.level:
 springdoc:
   swagger-ui:
     path: /myapi.html
-
+#보안을 위해 yml 파일에 저장
+jwt:
+  secret: 5iUUmWK1gNrcI5maX2MHsWnoTmn1HTfoFqPLfsNUw77yYyZbZjl0oujJFBRQ1yK6kMFXIfgV3t/BXsjd5yW8jQ==
 

@@ -1,8 +1,10 @@
 package com.example.todo.userapi.entity;
 
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
+
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -33,5 +35,9 @@ public class User  {
 
     @CreationTimestamp
     private LocalDateTime joinDate;
+
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'COMMON'") // ENUM은 '' 로 다시 감싸줄 것.
+    private Role role; // 유저권한
 
 }
