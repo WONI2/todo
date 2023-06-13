@@ -5,6 +5,8 @@ import com.example.todo.todoapi.dto.response.TodoDetailResponseDTO;
 import com.example.todo.todoapi.dto.response.TodoListResponseDTO;
 import com.example.todo.todoapi.entity.Todo;
 import com.example.todo.todoapi.repository.TodoRepository;
+import com.example.todo.userapi.entity.User;
+import com.example.todo.userapi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,10 +23,15 @@ import java.util.stream.Collectors;
 public class TodoService {
 
     private final TodoRepository todoRepository;
+    private final UserRepository userRepository;
 
     // 할 일 목록 조회
-    public TodoListResponseDTO retrieve() {
-        List<Todo> entityList = todoRepository.findAll();
+    public TodoListResponseDTO retrieve(String userId) { //로그인한 사람의 userId
+
+        //로그인한 유저의 정보 데이터베이스 조회
+        User user = getUser(userId);
+
+        List<Todo> entityList = todoRepository.findAllByUser(user);
 
         List<TodoDetailResponseDTO> dtoList = entityList.stream()
                 .map(TodoDetailResponseDTO::new)
@@ -35,13 +42,22 @@ public class TodoService {
                 .build();
     }
 
+    private User getUser(String userId) {
+        User user = userRepository.findById(userId).orElseThrow(
+                () -> new RuntimeException("회원정보가 없습니다")
+        );
+        return user;
+    }
+
     // 할 일 등록
-    public TodoListResponseDTO create(final TodoCreateRequestDTO createRequestDTO)
+    public TodoListResponseDTO create(final TodoCreateRequestDTO createRequestDTO,
+                                      final String userId) //controller가 token에서 parsing으로 받아온 userId를 받아올 것
             throws RuntimeException
     {
-        todoRepository.save(createRequestDTO.toEntity());
+        Todo todo = createRequestDTO.toEntity(getUser(userId));
+        todoRepository.save(todo);
         log.info("할 일이 저장되었습니다. 제목 : {}", createRequestDTO.getTitle());
-        return retrieve();
+        return retrieve(userId);
     }
 
     // 할 일 수정 (제목, 할일 완료여부)
@@ -56,12 +72,14 @@ public class TodoService {
             todoRepository.save(entity);
         });
 
-        return retrieve();
+        return retrieve("");
     }
 
     // 할 일 삭제
-    public TodoListResponseDTO delete(final String id) {
-
+    public TodoListResponseDTO delete(final String id, String userId) {
+        User user = userRepository.findById(userId).orElseThrow(
+                () -> new RuntimeException("회원정보가 없습니다")
+        );
         try {
             todoRepository.deleteById(id);
         } catch (Exception e) {
@@ -69,7 +87,7 @@ public class TodoService {
                     , id, e.getMessage());
             throw new RuntimeException("id가 존재하지 않아 삭제에 실패했습니다.");
         }
-        return retrieve();
+        return retrieve("");
     }
 
 }
