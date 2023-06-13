@@ -1,5 +1,6 @@
 package com.example.todo.todoapi.entity;
 
+import com.example.todo.userapi.entity.User;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
@@ -34,5 +35,9 @@ public class Todo {
     @CreationTimestamp
     private LocalDateTime createDate; // 등록 시간
 
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name= "user_id") //, referencedColumnName = "" 로 다른 컬럼을 FK로 정할 수 있음 .
+    private User user;
 
 }

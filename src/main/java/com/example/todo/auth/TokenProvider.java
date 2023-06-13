@@ -1,7 +1,9 @@
 package com.example.todo.auth;
 
 
+import com.example.todo.userapi.entity.Role;
 import com.example.todo.userapi.entity.User;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -60,7 +62,7 @@ public class TokenProvider {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", userEntity.getEmail());
-        claims.put("role", userEntity.getRole());
+        claims.put("role", userEntity.getRole().toString());
 
 
 
@@ -71,14 +73,37 @@ public class TokenProvider {
                         , SignatureAlgorithm.HS512
                 )
                 //token body에 payload에 들어갈 서명. 자주 쓰는 클레임은 setter로 저장되어 있음
+                .setClaims(claims)
+                //map으로 추가하고 싶은 내용을 작성해서 받을 것 . 먼저 셋팅해줘야 나중에 등록한 내용이 사라지지 않음
                 .setIssuer("발급자") //iss: 발급자 정보
                 .setIssuedAt(new Date()) // iat: 발급시간\
                 .setExpiration(expiry) //exp: 만료 시간
                 .setSubject(userEntity.getId()) //sub: 토큰을 식별할 수 있는 주요데이터 , user를 구분할 수 있는 id
-                .setClaims(claims) //map으로 추가하고 싶은 내용을 작성해서 받을 것 .
                 .compact();
     }
 
+    /***
+     * 클라이언트가 전송한 토큰을 디코딩하여 토큰의 위조여부 확인
+     * 토큰을 json으로 파싱해서 클레임(토큰정보)를 리턴
+     * @param token
+     * @return - 토큰 안에 있는 인증된 유저정보를 반환
+     */
+    public TokenUserInfo validateAndGetTokenUserInfo(String token) {
+        Claims claims = Jwts.parserBuilder()
+//                토큰발급자의 발급 당시의 서명을 넣어줌
+                .setSigningKey(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()))
+                .build() //서명 위조 검사. 위조된 경우 예외 발생. 위조x인 경우 페이로드(안의 클레임) 리턴
+                .parseClaimsJws(token)
+                .getBody();//토큰 안의 body 가져오기
+
+        log.info("claims : {} ", claims);
+
+        return TokenUserInfo.builder()
+                .userId(claims.getSubject())
+                .email(claims.get("email",String.class)) //map이 string object로 들어갔기 때문
+                .role(Role.valueOf(claims.get("role",String.class)))
+                .build();
+    }
 
 
 }
