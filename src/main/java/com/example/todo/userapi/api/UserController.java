@@ -1,5 +1,6 @@
 package com.example.todo.userapi.api;
 
+import com.example.todo.auth.TokenUserInfo;
 import com.example.todo.exception.DuplicatedEmailException;
 import com.example.todo.exception.NoRegisteredArgumentsException;
 import com.example.todo.userapi.dto.request.LoginRequestDTO;
@@ -10,6 +11,8 @@ import com.example.todo.userapi.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -82,6 +85,30 @@ public ResponseEntity<?> check(String email) {
 
 
     }
+
+//   일반회원을 프리미엄회원으로 승격하는 요청 처리
+    @PutMapping("/promote")
+    @PreAuthorize("hasRole('ROLE_COMMON')") //해당 권한을 가졌을 때만 이 메서드가 실행되도록 만듦.
+    public ResponseEntity<?> promote(
+            //권한검사(해당 권한이 아니면 인가처리 거부 403 코드 리턴)
+            @AuthenticationPrincipal TokenUserInfo userInfo
+            ) {
+        log.info("/api/auth/promote PUT!");
+
+        try {
+//            권한이 바뀌면 토큰도 재생성해서 클라이언트에게 보내줘야 함.
+          LoginResposeDTO resposeDTO
+                  = userService.promoteToPremium(userInfo);
+            return ResponseEntity.ok().body(resposeDTO);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build(); //500번에러 처리
+        }
+
+
+    }
+
 
 
 }

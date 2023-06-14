@@ -7,7 +7,9 @@ import com.example.todo.todoapi.dto.response.TodoListResponseDTO;
 import com.example.todo.todoapi.service.TodoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
@@ -39,10 +41,15 @@ public class TodoController {
         }
 
         try {
-            TodoListResponseDTO responseDTO = todoService.create(requestDTO, userInfo.getUserId());
+            TodoListResponseDTO responseDTO = todoService.create(requestDTO, userInfo);
             return ResponseEntity
                     .ok()
                     .body(responseDTO);
+        }catch (IllegalStateException e){
+            //권한때문에 발생하는 예외 - '인가되지 않음' - 401 에러 발생
+             log.warn(e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED) //status(401)과 같은 에러표현 방식
+                    .body(e.getMessage());
         } catch (RuntimeException e) {
             log.error(e.getMessage());
             return ResponseEntity
@@ -54,8 +61,11 @@ public class TodoController {
 
     // 할 일 삭제 요청
     @DeleteMapping("/{id}")
+//    @PreAuthorize("hasRole('ROLE_PREMIUM) or hasRole('ROLE_ADMIN)") -> 두가지 권한에 대한 처리를 할 때
     public ResponseEntity<?> deleteTodo(
+            @AuthenticationPrincipal TokenUserInfo userInfo,
             @PathVariable("id") String todoId
+
     ) {
         log.info("/api/todos/{} DELETE request!", todoId);
 
@@ -66,7 +76,7 @@ public class TodoController {
         }
 
         try {
-            TodoListResponseDTO responseDTO = todoService.delete(todoId);
+            TodoListResponseDTO responseDTO = todoService.delete(todoId, userInfo.getUserId());
             return ResponseEntity.ok().body(responseDTO);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
@@ -90,6 +100,7 @@ public class TodoController {
     // 할 일 수정요청 (PUT, PATCH)
     @RequestMapping(method = {RequestMethod.PUT, RequestMethod.PATCH})
     public ResponseEntity<?> updateTodo(
+            @AuthenticationPrincipal TokenUserInfo userInfo,
             @Validated @RequestBody TodoModifyRequestDTO requestDTO
             , BindingResult result
             , HttpServletRequest request
@@ -103,7 +114,7 @@ public class TodoController {
         log.info("modifying dto : {}", requestDTO);
 
         try {
-            TodoListResponseDTO responseDTO = todoService.update(requestDTO);
+            TodoListResponseDTO responseDTO = todoService.update(requestDTO,userInfo.getUserId());
             return ResponseEntity.ok().body(responseDTO);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()

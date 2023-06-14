@@ -1,10 +1,12 @@
 package com.example.todo.todoapi.service;
+import com.example.todo.auth.TokenUserInfo;
 import com.example.todo.todoapi.dto.request.TodoCreateRequestDTO;
 import com.example.todo.todoapi.dto.request.TodoModifyRequestDTO;
 import com.example.todo.todoapi.dto.response.TodoDetailResponseDTO;
 import com.example.todo.todoapi.dto.response.TodoListResponseDTO;
 import com.example.todo.todoapi.entity.Todo;
 import com.example.todo.todoapi.repository.TodoRepository;
+import com.example.todo.userapi.entity.Role;
 import com.example.todo.userapi.entity.User;
 import com.example.todo.userapi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -51,19 +53,29 @@ public class TodoService {
 
     // 할 일 등록
     public TodoListResponseDTO create(final TodoCreateRequestDTO createRequestDTO,
-                                      final String userId) //controller가 token에서 parsing으로 받아온 userId를 받아올 것
+                                      final TokenUserInfo userInfo) //controller가 token에서 parsing으로 받아온 userId를 받아올 것
             throws RuntimeException
     {
-        Todo todo = createRequestDTO.toEntity(getUser(userId));
+        User foundUser = getUser(userInfo.getUserId());
+
+
+        //권한에 따른 글쓰기 제한 처리
+        //일반 회원이 일정을 5개 이상 초과해서 작성하면 예외 발생 -- 자세하게 권한을 지정할 때
+        if(userInfo.getRole() == Role.COMMON
+         && todoRepository.countByUser(foundUser)  >= 5 ) {
+            throw new IllegalStateException("일반회원은 5개 이상 작성 불가");
+        }
+
+        Todo todo = createRequestDTO.toEntity(foundUser);
         todoRepository.save(todo);
         log.info("할 일이 저장되었습니다. 제목 : {}", createRequestDTO.getTitle());
-        return retrieve(userId);
+        return retrieve(userInfo.getUserId());
     }
 
     // 할 일 수정 (제목, 할일 완료여부)
     public TodoListResponseDTO update(
-            final TodoModifyRequestDTO modifyRequestDTO
-    ) {
+            final TodoModifyRequestDTO modifyRequestDTO,
+            String userId) {
         Optional<Todo> targetEntity = todoRepository.findById(modifyRequestDTO.getId());
 
         targetEntity.ifPresent(entity -> {
@@ -72,14 +84,12 @@ public class TodoService {
             todoRepository.save(entity);
         });
 
-        return retrieve("");
+        return retrieve(userId);
     }
 
     // 할 일 삭제
     public TodoListResponseDTO delete(final String id, String userId) {
-        User user = userRepository.findById(userId).orElseThrow(
-                () -> new RuntimeException("회원정보가 없습니다")
-        );
+
         try {
             todoRepository.deleteById(id);
         } catch (Exception e) {
@@ -87,7 +97,7 @@ public class TodoService {
                     , id, e.getMessage());
             throw new RuntimeException("id가 존재하지 않아 삭제에 실패했습니다.");
         }
-        return retrieve("");
+        return retrieve(userId);
     }
 
 }

@@ -9,7 +9,7 @@ import org.hibernate.annotations.GenericGenerator;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
-@Setter @Getter @ToString
+ @Getter @ToString
 @EqualsAndHashCode(of ="id")
 @NoArgsConstructor @AllArgsConstructor
 @Builder
@@ -40,5 +40,15 @@ public class User  {
 //    @ColumnDefault("'COMMON'") // ENUM은 '' 로 다시 감싸줄 것.
     @Builder.Default
     private Role role = Role.COMMON; // 유저권한
+
+//setter 없이 등급수정메서드를 새로 만들어서 사용하도록 할 것
+     public void changeRole(Role role){
+         this.role = role;
+
+     }
+
+
+
+
 
 }

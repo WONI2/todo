@@ -25,10 +25,13 @@ public class LoginResposeDTO {
     private String token; //인증토큰
 //    private String message; //로그인 메세지
 
+    private String role;
+
     public LoginResposeDTO(User user, String token) {
         this.email = user.getEmail();
         this.userName = user.getUserName();
         this.joinDate = LocalDate.from(user.getJoinDate());
         this.token = token;
+        this.role = String.valueOf(user.getRole());
     }
 }

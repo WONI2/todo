@@ -50,7 +50,7 @@ private final TokenProvider tokenProvider;
                 //        인가정보 리스트
                 List<SimpleGrantedAuthority> authorityList
                         = new ArrayList<>();
-                authorityList.add(new SimpleGrantedAuthority(userInfo.getRole().toString()));
+                authorityList.add(new SimpleGrantedAuthority("ROLE_"+userInfo.getRole().toString()));
 
 
 
