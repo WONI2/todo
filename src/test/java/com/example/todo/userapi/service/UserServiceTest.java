@@ -37,7 +37,7 @@ class UserServiceTest {
 //        param2: 에러가 발생하는 상황전달
         assertThrows(RuntimeException.class,
                 () -> {
-                    userService.create(dto);
+                    userService.create(dto, "");
                 });
 
     }

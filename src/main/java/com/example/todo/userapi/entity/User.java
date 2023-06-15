@@ -41,6 +41,9 @@ public class User  {
     @Builder.Default
     private Role role = Role.COMMON; // 유저권한
 
+
+     private String profileImg;
+
 //setter 없이 등급수정메서드를 새로 만들어서 사용하도록 할 것
      public void changeRole(Role role){
          this.role = role;

@@ -1,6 +1,5 @@
 package com.example.todo.userapi.dto.request;
 
-import com.example.todo.userapi.entity.Role;
 import com.example.todo.userapi.entity.User;
 import lombok.*;
 
@@ -32,11 +31,12 @@ public class UserRequestSignUpDTO {
 
 
     // 엔터티로 변경하는 메서드
-    public User toEntity() {
+    public User toEntity(String uploadFilePath) {
         return User.builder()
                 .email(this.email)
                 .password(this.password)
                 .userName(this.userName)
+                .profileImg(uploadFilePath)
                 .build();
     }
 }
